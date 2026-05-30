@@ -43,13 +43,13 @@ tailwind.config = {
       <span class="font-semibold text-ink-900">福浔道营收</span>
     </div>
     <div class="hidden sm:flex items-center gap-1 text-sm">
-      <a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收</a>
-      <a href="{{ url_for('inventory') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">库存</a>
-      <a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单</a>
-      <a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">日志</a>
-      <a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">仪表板</a>
+      <a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收概览</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('recipes') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">产品配方</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">采集日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">物料动态</a>
       <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-1.5 rounded-md text-brand bg-brand/10 font-medium">营收看板</a>
-      <a href="{{ url_for("shops_compare") }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('shops_compare') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">双店对比</a>
       <a href="{{ url_for('cost_analysis') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">成本分析</a>
       <a href="{{ url_for('logout') }}" class="ml-2 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">退出</a>
     </div>
@@ -61,16 +61,15 @@ tailwind.config = {
   <div id="mobile-menu" class="hidden sm:hidden border-t border-slate-100 bg-white">
     <div class="px-4 py-3 flex flex-col gap-1 text-sm">
       <a href="{{ url_for('revenue') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收概览</a>
-      <a href="{{ url_for('inventory') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存状态</a>
       <a href="{{ url_for('orders') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('recipes') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">产品配方</a>
       <a href="{{ url_for('logs') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">采集日志</a>
-      <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存仪表板</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">物料动态</a>
       <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-2 rounded-md text-brand bg-brand/10 font-medium">营收看板</a>
       <a href="{{ url_for('shops_compare') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">双店对比</a>
       <a href="{{ url_for('cost_analysis') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">成本分析</a>
-      <div class="border-t border-slate-100 mt-1 pt-2">
-        <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>
-      </div>
+      <div class="border-t border-slate-100 mt-1 pt-2"><a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a></div>
+    </div>
     </div>
   </div>
 </nav>

@@ -1,0 +1,14 @@
+{
+  "db": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "root",
+    "password": "ChickenStore2026!",
+    "database": "chicken_store"
+  },
+  "auth": {
+    "enabled": true,
+    "password": "chicken2026"
+  },
+  "port": 5006
+}

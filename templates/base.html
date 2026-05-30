@@ -53,15 +53,15 @@ tailwind.config = {
                 {% if request.endpoint == 'revenue' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
         营收概览
       </a>
-      <a href="{{ url_for('inventory') }}"
-         class="px-3 py-1.5 rounded-md font-medium transition-colors
-                {% if request.endpoint == 'inventory' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
-        库存状态
-      </a>
       <a href="{{ url_for('orders') }}"
          class="px-3 py-1.5 rounded-md font-medium transition-colors
                 {% if request.endpoint == 'orders' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
         订单查询
+      </a>
+      <a href="{{ url_for('recipes') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'recipes' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        产品配方
       </a>
       <a href="{{ url_for('logs') }}"
          class="px-3 py-1.5 rounded-md font-medium transition-colors
@@ -71,22 +71,22 @@ tailwind.config = {
       <a href="{{ url_for('dashboard') }}"
          class="px-3 py-1.5 rounded-md font-medium transition-colors
                 {% if request.endpoint == 'dashboard' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
-        库存仪表板
+        物料动态
       </a>
       <a href="{{ url_for('revenue_dashboard') }}"
          class="px-3 py-1.5 rounded-md font-medium transition-colors
                 {% if request.endpoint == 'revenue_dashboard' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
         营收看板
       </a>
-      <a href="{{ url_for('cost_analysis') }}"
-         class="px-3 py-1.5 rounded-md font-medium transition-colors
-                {% if request.endpoint == 'cost_analysis' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
-        成本分析
-      </a>
       <a href="{{ url_for('shops_compare') }}"
          class="px-3 py-1.5 rounded-md font-medium transition-colors
                 {% if request.endpoint == 'shops_compare' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
         双店对比
+      </a>
+      <a href="{{ url_for('cost_analysis') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'cost_analysis' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        成本分析
       </a>
       <a href="{{ url_for('logout') }}"
          class="ml-3 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100 transition-colors border border-slate-200 text-xs">
@@ -106,6 +106,7 @@ tailwind.config = {
   </div>
 
   <!-- Mobile menu -->
+
   <div id="mobile-menu" class="hidden md:hidden border-t border-slate-100 bg-white">
     <div class="px-4 py-3 flex flex-col gap-1 text-sm">
       <a href="{{ url_for('revenue') }}"
@@ -113,15 +114,15 @@ tailwind.config = {
                 {% if request.endpoint == 'revenue' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
         营收概览
       </a>
-      <a href="{{ url_for('inventory') }}"
-         class="px-3 py-2 rounded-md font-medium
-                {% if request.endpoint == 'inventory' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
-        库存状态
-      </a>
       <a href="{{ url_for('orders') }}"
          class="px-3 py-2 rounded-md font-medium
                 {% if request.endpoint == 'orders' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
         订单查询
+      </a>
+      <a href="{{ url_for('recipes') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'recipes' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        产品配方
       </a>
       <a href="{{ url_for('logs') }}"
          class="px-3 py-2 rounded-md font-medium
@@ -131,22 +132,22 @@ tailwind.config = {
       <a href="{{ url_for('dashboard') }}"
          class="px-3 py-2 rounded-md font-medium
                 {% if request.endpoint == 'dashboard' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
-        库存仪表板
+        物料动态
       </a>
       <a href="{{ url_for('revenue_dashboard') }}"
          class="px-3 py-2 rounded-md font-medium
                 {% if request.endpoint == 'revenue_dashboard' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
         营收看板
       </a>
-      <a href="{{ url_for('cost_analysis') }}"
-         class="px-3 py-2 rounded-md font-medium
-                {% if request.endpoint == 'cost_analysis' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
-        成本分析
-      </a>
       <a href="{{ url_for('shops_compare') }}"
          class="px-3 py-2 rounded-md font-medium
                 {% if request.endpoint == 'shops_compare' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
         双店对比
+      </a>
+      <a href="{{ url_for('cost_analysis') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'cost_analysis' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        成本分析
       </a>
       <div class="border-t border-slate-100 mt-1 pt-2">
         <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>

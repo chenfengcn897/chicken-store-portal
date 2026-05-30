@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}产品配方{% endblock %}
+
+{% block extra_head %}
+<style>
+  .recipe-detail { display: none; }
+  .recipe-detail.open { display: table-row; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-ink-900">产品配方</h1>
+    <p class="text-sm text-ink-500 mt-0.5">共 {{ recipes|length }} 个产品，按近30天销量排序</p>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 text-xs text-ink-500 uppercase tracking-wide border-b border-slate-100">
+          <th class="px-5 py-3 text-left font-medium w-8"></th>
+          <th class="px-5 py-3 text-left font-medium">产品名称</th>
+          <th class="px-5 py-3 text-right font-medium">配方成本</th>
+          <th class="px-5 py-3 text-right font-medium">参考售价</th>
+          <th class="px-5 py-3 text-right font-medium">毛利率</th>
+          <th class="px-5 py-3 text-right font-medium">近30天销量</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in recipes %}
+        <!-- Product row -->
+        <tr class="hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100"
+            onclick="toggleDetail('detail-{{ loop.index }}', this)">
+          <td class="px-5 py-3 text-ink-300 text-center">
+            <span class="toggle-icon text-xs">▶</span>
+          </td>
+          <td class="px-5 py-3 font-medium text-ink-900">{{ r.product_name }}</td>
+          <td class="px-5 py-3 text-right num-tabular text-ink-700">
+            {% if r.recipe_cost > 0 %}¥{{ "%.2f"|format(r.recipe_cost) }}{% else %}<span class="text-ink-300">—</span>{% endif %}
+          </td>
+          <td class="px-5 py-3 text-right num-tabular text-ink-700">
+            {% if r.sale_price %}¥{{ "%.0f"|format(r.sale_price) }}{% else %}<span class="text-ink-300">—</span>{% endif %}
+          </td>
+          <td class="px-5 py-3 text-right num-tabular">
+            {% if r.sale_price and r.recipe_cost > 0 %}
+              {% set gm = (r.sale_price - r.recipe_cost) / r.sale_price * 100 %}
+              <span class="{% if gm >= 50 %}text-ok{% elif gm >= 30 %}text-warn{% else %}text-brand{% endif %} font-semibold">
+                {{ "%.1f"|format(gm) }}%
+              </span>
+            {% else %}
+              <span class="text-ink-300">—</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-right num-tabular">
+            {% if r.sales_30d > 0 %}
+              <span class="font-semibold text-ink-900">{{ r.sales_30d }}</span>
+            {% else %}
+              <span class="text-ink-300">0</span>
+            {% endif %}
+          </td>
+        </tr>
+        <!-- Detail row (hidden by default) -->
+        <tr id="detail-{{ loop.index }}" class="recipe-detail bg-slate-50">
+          <td colspan="6" class="px-8 py-4">
+            {% if r.ingredients %}
+            <div class="text-xs text-ink-500 mb-2 font-medium uppercase tracking-wide">配方明细</div>
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="text-ink-400">
+                  <th class="text-left pb-1 font-medium">物料名</th>
+                  <th class="text-right pb-1 font-medium">用量</th>
+                  <th class="text-left pb-1 font-medium pl-2">单位</th>
+                  <th class="text-right pb-1 font-medium">成本</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                {% for ing in r.ingredients %}
+                <tr>
+                  <td class="py-1 text-ink-700">{{ ing.name }}</td>
+                  <td class="py-1 text-right num-tabular text-ink-600">{{ ing.qty }}</td>
+                  <td class="py-1 pl-2 text-ink-400">{{ ing.unit }}</td>
+                  <td class="py-1 text-right num-tabular text-ink-600">
+                    {% if ing.cost > 0 %}¥{{ "%.4f"|format(ing.cost) }}{% else %}—{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot>
+                <tr class="border-t border-slate-200">
+                  <td colspan="3" class="pt-2 font-semibold text-ink-700">合计</td>
+                  <td class="pt-2 text-right font-semibold text-ink-900 num-tabular">¥{{ "%.2f"|format(r.recipe_cost) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+            {% else %}
+            <span class="text-ink-400">暂无配方明细</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleDetail(id, row) {
+  const detail = document.getElementById(id);
+  const icon = row.querySelector('.toggle-icon');
+  if (detail.classList.contains('open')) {
+    detail.classList.remove('open');
+    icon.textContent = '▶';
+  } else {
+    detail.classList.add('open');
+    icon.textContent = '▼';
+  }
+}
+</script>
+{% endblock %}

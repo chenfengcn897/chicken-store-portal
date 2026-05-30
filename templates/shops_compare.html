@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>福浸道双店对比</title>
+<title>福浔道双店对比</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
@@ -16,15 +16,15 @@ tailwind.config={theme:{extend:{colors:{brand:{DEFAULT:'#FF4D4F',soft:'#FFF1F0',
 <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
 <div class="flex items-center gap-2"><div class="w-7 h-7 rounded-md bg-brand text-white flex items-center justify-center text-sm font-bold">福</div><span class="font-semibold text-ink-900">福浔道对比</span></div>
 <div class="hidden sm:flex items-center gap-1 text-sm">
-<a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收</a>
-<a href="{{ url_for('inventory') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">库存</a>
-<a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单</a>
-<a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">日志</a>
-<a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">仪表板</a>
-<a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收看板</a>
-<a href="{{ url_for('cost_analysis') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">成本分析</a>
-<a href="{{ url_for('shops_compare') }}" class="px-3 py-1.5 rounded-md text-brand bg-brand/10 font-medium">双店对比</a>
-<a href="{{ url_for('logout') }}" class="ml-2 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">退出</a>
+      <a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收概览</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('recipes') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">产品配方</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">采集日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">物料动态</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收看板</a>
+      <a href="{{ url_for('shops_compare') }}" class="px-3 py-1.5 rounded-md text-brand bg-brand/10 font-medium">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">成本分析</a>
+      <a href="{{ url_for('logout') }}" class="ml-2 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">退出</a>
 </div>
 <button id="nav-toggle" class="sm:hidden p-2 rounded-md text-ink-500 hover:bg-slate-100 transition-colors" aria-label="菜单">
 <svg id="icon-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -33,17 +33,16 @@ tailwind.config={theme:{extend:{colors:{brand:{DEFAULT:'#FF4D4F',soft:'#FFF1F0',
 </div>
 <div id="mobile-menu" class="hidden sm:hidden border-t border-slate-100 bg-white">
 <div class="px-4 py-3 flex flex-col gap-1 text-sm">
-<a href="{{ url_for('revenue') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收概览</a>
-<a href="{{ url_for('inventory') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存状态</a>
-<a href="{{ url_for('orders') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">订单查询</a>
-<a href="{{ url_for('logs') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">采集日志</a>
-<a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存仪表板</a>
-<a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收看板</a>
-<a href="{{ url_for('shops_compare') }}" class="px-3 py-2 rounded-md text-brand bg-brand/10 font-medium">双店对比</a>
-<a href="{{ url_for('cost_analysis') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">成本分析</a>
-<div class="border-t border-slate-100 mt-1 pt-2">
-<a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>
-</div></div></div>
+      <a href="{{ url_for('revenue') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收概览</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('recipes') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">产品配方</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">采集日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">物料动态</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收看板</a>
+      <a href="{{ url_for('shops_compare') }}" class="px-3 py-2 rounded-md text-brand bg-brand/10 font-medium">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">成本分析</a>
+      <div class="border-t border-slate-100 mt-1 pt-2"><a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a></div>
+    </div></div></div>
 </nav>
 <script>(function(){var t=document.getElementById('nav-toggle'),m=document.getElementById('mobile-menu'),o=document.getElementById('icon-open'),c=document.getElementById('icon-close');t.addEventListener('click',function(){var h=m.classList.toggle('hidden');o.classList.toggle('hidden',!h);c.classList.toggle('hidden',h);});})();</script>
 <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -61,7 +60,7 @@ tailwind.config={theme:{extend:{colors:{brand:{DEFAULT:'#FF4D4F',soft:'#FFF1F0',
 <td class="px-3 py-3 text-right num-tabular font-semibold {% if item.shop2 == 0 %}text-brand{% else %}text-ink-700{% endif %}">{{ item.shop2|int if item.shop2 == item.shop2|int else "%.1f"|format(item.shop2) }}</td>
 <td class="px-4 sm:px-5 py-3 text-right num-tabular font-semibold text-ink-900">{{ item.total|int if item.total == item.total|int else "%.1f"|format(item.total) }}</td></tr>{% else %}
 <tr><td colspan="5" class="px-5 py-10 text-center text-ink-300 text-sm">暂无库存数据</td></tr>{% endfor %}</tbody></table></div></section>
-<footer class="text-center text-xs text-ink-300 pb-4">福浸道烤鸡 · 数据来源：daily_revenues + merged_orders + materials</footer>
+<footer class="text-center text-xs text-ink-300 pb-4">福浔道烤鸡 · 数据来源：daily_revenues + merged_orders + materials</footer>
 </main>
 <script id="sc-data" type="application/json">{"labels":{{date_labels|tojson}},"shop1":{{shop1_income|tojson}},"shop2":{{shop2_income|tojson}},"platform":{{platform_chart|tojson}}}</script>
 <script>(function(){var D=JSON.parse(document.getElementById('sc-data').textContent);var fy=function(v){return'¥'+(v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0))};

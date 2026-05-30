@@ -2,82 +2,70 @@
 {% block title %}采集日志{% endblock %}
 
 {% block content %}
-<!-- Page header -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
   <div>
     <h1 class="text-2xl font-bold tracking-tight text-ink-900">采集日志</h1>
-    <p class="text-sm text-ink-500 mt-0.5">最近 100 条采集记录</p>
+    <p class="text-sm text-ink-500 mt-0.5">解析自 collect_all.log，最近 50 次采集</p>
   </div>
-  <!-- Status legend -->
   <div class="flex items-center gap-3 text-xs text-ink-500">
-    <span class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-ok inline-block"></span>成功
-    </span>
-    <span class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-warn inline-block"></span>部分
-    </span>
-    <span class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-brand inline-block"></span>失败
-    </span>
+    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-ok inline-block"></span>成功</span>
+    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-warn inline-block"></span>部分成功</span>
+    <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-brand inline-block"></span>失败</span>
   </div>
 </div>
 
-<!-- Table card -->
-<div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-slate-50 text-xs text-ink-500 uppercase tracking-wide border-b border-slate-100">
-          <th class="px-4 py-3 text-left font-medium">ID</th>
-          <th class="px-4 py-3 text-left font-medium">数据类型</th>
-          <th class="px-4 py-3 text-left font-medium">开始时间</th>
-          <th class="px-4 py-3 text-left font-medium">结束时间</th>
-          <th class="px-4 py-3 text-right font-medium">耗时</th>
-          <th class="px-4 py-3 text-center font-medium">状态</th>
-          <th class="px-4 py-3 text-right font-medium">获取</th>
-          <th class="px-4 py-3 text-right font-medium">插入</th>
-          <th class="px-4 py-3 text-right font-medium">更新</th>
-          <th class="px-4 py-3 text-left font-medium">错误信息</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        {% for r in rows %}
-        <tr class="hover:bg-slate-50 transition-colors
-                   {% if r.status=='FAILED' %}bg-brand/5{% elif r.status=='PARTIAL' %}bg-warn/5{% endif %}">
-          <td class="px-4 py-3 text-ink-400 num-tabular text-xs">{{ r.id }}</td>
-          <td class="px-4 py-3">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-600">
-              {{ r.data_type }}
-            </span>
-          </td>
-          <td class="px-4 py-3 text-xs text-ink-500 num-tabular whitespace-nowrap">
-            {{ r.started_at.strftime('%m-%d %H:%M:%S') if r.started_at else '—' }}
-          </td>
-          <td class="px-4 py-3 text-xs text-ink-500 num-tabular whitespace-nowrap">
-            {{ r.finished_at.strftime('%m-%d %H:%M:%S') if r.finished_at else '—' }}
-          </td>
-          <td class="px-4 py-3 text-right text-xs text-ink-500 num-tabular">
-            {{ "%.1f"|format(r.duration_ms/1000) if r.duration_ms else '—' }}s
-          </td>
-          <td class="px-4 py-3 text-center">
-            {% if r.status == 'SUCCESS' %}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-ok/10 text-ok">成功</span>
-            {% elif r.status == 'FAILED' %}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand/10 text-brand">失败</span>
-            {% else %}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-warn/15 text-warn">部分</span>
-            {% endif %}
-          </td>
-          <td class="px-4 py-3 text-right text-ink-600 num-tabular">{{ r.records_fetched }}</td>
-          <td class="px-4 py-3 text-right text-ink-600 num-tabular">{{ r.records_inserted }}</td>
-          <td class="px-4 py-3 text-right text-ink-600 num-tabular">{{ r.records_updated }}</td>
-          <td class="px-4 py-3 text-xs text-brand max-w-xs truncate">
-            {{ (r.error_message or '')[:60] }}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+{% if not sessions %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-card p-8 text-center text-ink-400">
+  暂无采集记录（日志文件不存在或为空）
 </div>
+{% else %}
+<div class="space-y-4">
+  {% for s in sessions %}
+  <div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+    <!-- Session header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 border-b border-slate-100
+                {% if s.status == 'error' %}bg-brand/5{% elif s.status == 'partial' %}bg-warn/5{% else %}bg-ok/5{% endif %}">
+      <div class="flex items-center gap-3">
+        {% if s.status == 'ok' %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-ok/10 text-ok">✅ 成功</span>
+        {% elif s.status == 'error' %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand/10 text-brand">❌ 失败</span>
+        {% else %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-warn/15 text-warn">⚠️ 部分成功</span>
+        {% endif %}
+        <span class="font-semibold text-ink-900 num-tabular">{{ s.start_time.strftime('%Y-%m-%d %H:%M') }}</span>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-ink-500">
+        {% if s.duration is not none %}
+          <span>耗时 <span class="font-semibold text-ink-700 num-tabular">{{ s.duration }}s</span></span>
+        {% endif %}
+        {% if s.error_count is not none %}
+          <span>错误数 <span class="font-semibold {% if s.error_count > 0 %}text-brand{% else %}text-ok{% endif %} num-tabular">{{ s.error_count }}</span></span>
+        {% endif %}
+      </div>
+    </div>
+    <!-- Subsystems -->
+    {% if s.subsystems %}
+    <div class="divide-y divide-slate-50">
+      {% for sub in s.subsystems %}
+      <div class="flex items-center justify-between px-5 py-2.5 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-600">{{ sub.name }}</span>
+          <span class="text-ink-500">{{ sub.detail }}</span>
+        </div>
+        {% if sub.status == 'ok' %}
+          <span class="text-ok text-xs">✓</span>
+        {% else %}
+          <span class="text-brand text-xs">✗</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-5 py-3 text-sm text-ink-400">无子系统详情</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 {% endblock %}
