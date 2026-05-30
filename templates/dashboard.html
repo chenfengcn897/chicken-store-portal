@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福浔道库存仪表板</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: { DEFAULT: '#FF4D4F', soft: '#FFF1F0', dark: '#CF1322' },
+        ok:    { DEFAULT: '#52C41A', soft: '#F6FFED', dark: '#389E0D' },
+        ink:   { 900: '#0F172A', 700: '#334155', 500: '#64748B', 300: '#CBD5E1', 100: '#F1F5F9' },
+      },
+      fontFamily: {
+        sans: ['-apple-system','BlinkMacSystemFont','"PingFang SC"','"Microsoft YaHei"','sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06)',
+        cardHover: '0 4px 12px 0 rgba(15, 23, 42, 0.08)',
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { -webkit-font-smoothing: antialiased; }
+  .num-tabular { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+</style>
+</head>
+<body class="bg-slate-50 text-ink-900 font-sans">
+
+<!-- 顶部导航 -->
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-md bg-brand text-white flex items-center justify-center text-sm font-bold">福</div>
+      <span class="font-semibold text-ink-900">福浔道库存</span>
+    </div>
+    <div class="hidden sm:flex items-center gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收</a>
+      <a href="{{ url_for('inventory') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">库存</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-brand bg-brand/10 font-medium">仪表板</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收看板</a>
+      <a href="{{ url_for("shops_compare") }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">成本分析</a>
+      <a href="{{ url_for('logout') }}" class="ml-2 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">退出</a>
+    </div>
+    <button id="nav-toggle" class="sm:hidden p-2 rounded-md text-ink-500 hover:bg-slate-100 transition-colors" aria-label="菜单">
+      <svg id="icon-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <svg id="icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" class="hidden sm:hidden border-t border-slate-100 bg-white">
+    <div class="px-4 py-3 flex flex-col gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收概览</a>
+      <a href="{{ url_for('inventory') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存状态</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">采集日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-brand bg-brand/10 font-medium">库存仪表板</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收看板</a>
+      <a href="{{ url_for('shops_compare') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">成本分析</a>
+      <div class="border-t border-slate-100 mt-1 pt-2">
+        <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>
+      </div>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    var t=document.getElementById('nav-toggle'),m=document.getElementById('mobile-menu'),o=document.getElementById('icon-open'),c=document.getElementById('icon-close');
+    t.addEventListener('click',function(){var h=m.classList.toggle('hidden');o.classList.toggle('hidden',!h);c.classList.toggle('hidden',h);});
+  })();
+</script>
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+  <!-- 标题区 -->
+  <header class="flex items-end justify-between mb-6">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">核心物料动态</h1>
+      <p class="text-sm text-ink-500 mt-1">双店合计 · 数据与企微报表口径一致</p>
+    </div>
+    <span class="text-xs text-ink-500 num-tabular">{{ now.strftime("%m/%d %H:%M") if now else "" }}</span>
+  </header>
+
+  <!-- 4 张物料卡 -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {% for c in core_cards %}
+    {% set danger = c.status == 'danger' %}
+    <div class="bg-white rounded-xl shadow-card hover:shadow-cardHover transition border border-slate-100 overflow-hidden">
+      <!-- 顶部色条 -->
+      <div class="h-1 {{ 'bg-brand' if danger else 'bg-ok' }}"></div>
+      <div class="p-4">
+        <!-- 物料名 + 状态徽章 -->
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-medium text-ink-700">{{ c.display }}</span>
+          {% if danger %}
+            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-brand-soft text-brand-dark">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M12 21a9 9 0 110-18 9 9 0 010 18z"/></svg>
+              缺{{ c.deficit|int if c.deficit == c.deficit|int else "%.1f"|format(c.deficit) }}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-ok-soft text-ok-dark">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              安全
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- 总余量大字 -->
+        <div class="flex items-baseline gap-1 mb-3">
+          <span class="text-3xl font-bold num-tabular {{ 'text-brand' if danger else 'text-ink-900' }}">
+            {{ c.total_stock|int if c.total_stock == c.total_stock|int else "%.1f"|format(c.total_stock) }}
+          </span>
+          <span class="text-sm text-ink-500">{{ c.unit }}</span>
+        </div>
+
+        <!-- 详情列表 -->
+        <dl class="space-y-1.5 text-xs border-t border-slate-100 pt-3">
+          <div class="flex justify-between">
+            <dt class="text-ink-500">安全线</dt>
+            <dd class="num-tabular text-ink-700 font-medium">
+              {% if c.safety and c.safety > 0 %}
+                {{ c.safety|int if c.safety == c.safety|int else "%.1f"|format(c.safety) }} {{ c.unit }}
+              {% else %}
+                <span class="text-ink-300">—</span>
+              {% endif %}
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-ink-500">门店</dt>
+            <dd class="num-tabular text-ink-700">
+              五{{ c.store_wu|int if c.store_wu == c.store_wu|int else "%.1f"|format(c.store_wu) }}
+              <span class="text-ink-300 mx-1">/</span>
+              湖{{ c.store_hu|int if c.store_hu == c.store_hu|int else "%.1f"|format(c.store_hu) }}
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-ink-500">在途</dt>
+            <dd class="num-tabular">
+              {% if c.in_transit and c.in_transit > 0 %}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">
+                  +{{ c.in_transit|int if c.in_transit == c.in_transit|int else "%.1f"|format(c.in_transit) }} {{ c.unit }}
+                </span>
+              {% else %}
+                <span class="text-ink-300">—</span>
+              {% endif %}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- 近3天动态 -->
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 mb-6 overflow-hidden">
+    <div class="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="font-semibold text-ink-900">近 3 天动态</h2>
+      <div class="hidden sm:flex items-center gap-3 text-xs text-ink-500">
+        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-brand"></span>耗</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-ok"></span>入</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span>采</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400"></span>盘</span>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-ink-500 text-xs uppercase tracking-wider">
+          <tr>
+            <th class="text-left font-medium px-4 sm:px-5 py-2.5 w-20">物料</th>
+            {% for d in date_labels %}
+            <th class="text-left font-medium px-3 py-2.5 num-tabular">{{ d }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for row in dynamic_rows %}
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-4 sm:px-5 py-3 font-medium text-ink-900 whitespace-nowrap">{{ row.name }}</td>
+            {% for entries in row.days %}
+            <td class="px-3 py-3 align-top">
+              {% if entries %}
+                <div class="flex flex-wrap gap-1">
+                {% for e in entries %}
+                  {% if e.color == 'red' %}
+                    <span class="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-brand-soft text-brand-dark num-tabular">{{ e.label }}</span>
+                  {% elif e.color == 'green' %}
+                    <span class="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-ok-soft text-ok-dark num-tabular">{{ e.label }}</span>
+                  {% elif e.color == 'blue' %}
+                    <span class="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 num-tabular">{{ e.label }}</span>
+                  {% else %}
+                    <span class="inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-slate-100 text-ink-700 num-tabular">{{ e.label }}</span>
+                  {% endif %}
+                {% endfor %}
+                </div>
+              {% else %}
+                <span class="text-ink-300 text-xs">—</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 预警面板 -->
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 mb-8 overflow-hidden">
+    <div class="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="font-semibold text-ink-900">补货预警</h2>
+      {% if alerts %}
+      <span class="text-xs px-2 py-0.5 rounded-full bg-brand-soft text-brand-dark font-medium">{{ alerts|length }} 项</span>
+      {% else %}
+      <span class="text-xs px-2 py-0.5 rounded-full bg-ok-soft text-ok-dark font-medium">全部充足</span>
+      {% endif %}
+    </div>
+
+    {% if alerts %}
+    <ul class="divide-y divide-slate-100">
+      {% for a in alerts %}
+      <li class="px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-brand-soft text-brand flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.008v.008H12v-.008z"/></svg>
+          </div>
+          <div class="min-w-0">
+            <div class="font-medium text-ink-900">{{ a.name }}</div>
+            <div class="text-xs text-ink-500 num-tabular">
+              库存 {{ a.stock|int if a.stock == a.stock|int else "%.1f"|format(a.stock) }}
+              <span class="text-ink-300 mx-1">·</span>
+              安全 {{ a.safety|int if a.safety == a.safety|int else "%.1f"|format(a.safety) }}
+              {% if a.in_transit and a.in_transit > 0 %}
+              <span class="text-ink-300 mx-1">·</span>
+              在途 {{ a.in_transit|int if a.in_transit == a.in_transit|int else "%.1f"|format(a.in_transit) }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <span class="inline-flex items-center text-sm font-semibold px-2.5 py-1 rounded-md bg-brand text-white num-tabular flex-shrink-0">
+          需补 {{ a.deficit|int if a.deficit == a.deficit|int else "%.1f"|format(a.deficit) }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-5 py-10 text-center">
+      <div class="inline-flex w-12 h-12 rounded-full bg-ok-soft text-ok items-center justify-center mb-3">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <p class="text-sm text-ink-500">所有核心物料库存充足</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <footer class="text-center text-xs text-ink-300 pb-4">
+    福浔道烤鸡 · 数据来源：企微报表口径
+  </footer>
+</main>
+
+</body>
+</html>

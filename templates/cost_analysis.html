@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福浔道成本分析</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: { DEFAULT: '#FF4D4F', soft: '#FFF1F0', dark: '#CF1322' },
+        ok:    { DEFAULT: '#52C41A', soft: '#F6FFED', dark: '#389E0D' },
+        warn:  { DEFAULT: '#FAAD14', soft: '#FFFBE6' },
+        ink:   { 900: '#0F172A', 700: '#334155', 500: '#64748B', 300: '#CBD5E1', 100: '#F1F5F9' },
+      },
+      fontFamily: {
+        sans: ['-apple-system','BlinkMacSystemFont','"PingFang SC"','"Microsoft YaHei"','sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06)',
+        cardHover: '0 4px 12px 0 rgba(15, 23, 42, 0.08)',
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { -webkit-font-smoothing: antialiased; }
+  .num-tabular { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+  .chart-wrap { position: relative; height: 280px; }
+  @media (min-width: 640px) { .chart-wrap { height: 320px; } }
+</style>
+</head>
+<body class="bg-slate-50 text-ink-900 font-sans">
+
+<!-- 顶部导航 -->
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-md bg-brand text-white flex items-center justify-center text-sm font-bold">福</div>
+      <span class="font-semibold text-ink-900">福浔道成本</span>
+    </div>
+    <div class="hidden sm:flex items-center gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收</a>
+      <a href="{{ url_for('inventory') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">库存</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">仪表板</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收看板</a>
+      <a href="{{ url_for("shops_compare") }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-1.5 rounded-md text-brand bg-brand/10 font-medium">成本分析</a>
+      <a href="{{ url_for('logout') }}" class="ml-2 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">退出</a>
+    </div>
+    <button id="nav-toggle" class="sm:hidden p-2 rounded-md text-ink-500 hover:bg-slate-100 transition-colors" aria-label="菜单">
+      <svg id="icon-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <svg id="icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" class="hidden sm:hidden border-t border-slate-100 bg-white">
+    <div class="px-4 py-3 flex flex-col gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收概览</a>
+      <a href="{{ url_for('inventory') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存状态</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">采集日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存仪表板</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收看板</a>
+      <a href="{{ url_for('shops_compare') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-2 rounded-md text-brand bg-brand/10 font-medium">成本分析</a>
+      <div class="border-t border-slate-100 mt-1 pt-2">
+        <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>
+      </div>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    var t=document.getElementById('nav-toggle'),m=document.getElementById('mobile-menu'),o=document.getElementById('icon-open'),c=document.getElementById('icon-close');
+    t.addEventListener('click',function(){var h=m.classList.toggle('hidden');o.classList.toggle('hidden',!h);c.classList.toggle('hidden',h);});
+  })();
+</script>
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+  <!-- 标题 -->
+  <header class="flex items-end justify-between mb-6">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">成本分析</h1>
+      <p class="text-sm text-ink-500 mt-1">采购成本 · 物料占比 · 单只鸡 BOM · 毛利率估算</p>
+    </div>
+    <span class="text-xs text-ink-500 num-tabular">{{ now.strftime("%m/%d %H:%M") if now else "" }}</span>
+  </header>
+
+  <!-- 头部 KPI -->
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4">
+      <div class="text-xs text-ink-500">累计采购金额</div>
+      <div class="mt-1 text-2xl font-bold num-tabular">¥{{ "{:,.0f}".format(kpi.total_amount) }}</div>
+      <div class="text-xs text-ink-500 mt-1 num-tabular">{{ kpi.total_orders }} 单 · {{ kpi.months }} 个月</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4">
+      <div class="text-xs text-ink-500">单只鸡总成本</div>
+      <div class="mt-1 text-2xl font-bold num-tabular">¥{{ "{:.2f}".format(kpi.bom_total) }}</div>
+      <div class="text-xs text-ink-500 mt-1">招牌脆皮烧鸡-整只</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4">
+      <div class="text-xs text-ink-500">单只腌料</div>
+      <div class="mt-1 text-2xl font-bold num-tabular">¥{{ "{:.2f}".format(kpi.spice_per_chicken) }}</div>
+      <div class="text-xs text-ink-500 mt-1">23 g/只</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4">
+      <div class="text-xs text-ink-500">单只包材摊销</div>
+      <div class="mt-1 text-2xl font-bold num-tabular">¥{{ "{:.2f}".format(kpi.pkg_per_chicken) }}</div>
+      <div class="text-xs text-ink-500 mt-1">近 90 天均摊</div>
+    </div>
+  </section>
+
+  <!-- 月度趋势 + 物料占比 -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-ink-900">月度采购成本</h3>
+        <span class="text-xs text-ink-500 num-tabular">共 ¥{{ "{:,.0f}".format(kpi.total_amount) }}</span>
+      </div>
+      <div class="chart-wrap"><canvas id="monthChart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-ink-900">各物料采购占比</h3>
+        <span class="text-xs text-ink-500 num-tabular">总计 ¥{{ "{:,.0f}".format(pie_total) }}</span>
+      </div>
+      <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- 毛利率估算（近 7 日） -->
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5 mb-8">
+    <div class="flex items-baseline justify-between mb-3">
+      <h3 class="font-semibold text-ink-900">毛利率估算（近 7 日）</h3>
+      <span class="text-xs text-ink-500">物料成本 = 当日鲜鸡出库数 × ¥{{ "{:.2f}".format(bom_total) }}/只</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="text-ink-500 border-b border-slate-200">
+            <th class="text-left py-2 px-3 font-medium">日期</th>
+            <th class="text-right py-2 px-3 font-medium">营收</th>
+            <th class="text-right py-2 px-3 font-medium">卖鸡数</th>
+            <th class="text-right py-2 px-3 font-medium">物料成本</th>
+            <th class="text-right py-2 px-3 font-medium">毛利</th>
+            <th class="text-right py-2 px-3 font-medium">毛利率</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in margin_cards %}
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-2 px-3 num-tabular">{{ c.date }} <span class="text-ink-500">周{{ c.weekday }}</span></td>
+            <td class="py-2 px-3 text-right num-tabular">¥{{ "{:,.0f}".format(c.income) }}</td>
+            <td class="py-2 px-3 text-right num-tabular">{{ c.chickens }} 只</td>
+            <td class="py-2 px-3 text-right num-tabular text-ink-500">¥{{ "{:,.0f}".format(c.cost) }}</td>
+            <td class="py-2 px-3 text-right num-tabular font-semibold">¥{{ "{:,.0f}".format(c.gross) }}</td>
+            <td class="py-2 px-3 text-right num-tabular">
+              {% if c.gm_pct is not none %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs
+                  {% if c.gm_pct >= 50 %}bg-ok-soft text-ok-dark
+                  {% elif c.gm_pct >= 30 %}bg-warn-soft text-warn
+                  {% else %}bg-brand-soft text-brand-dark{% endif %}">{{ c.gm_pct }}%</span>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 单只鸡成本拆解 -->
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+    <!-- 左：组聚合卡片 -->
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5">
+      <h3 class="font-semibold text-ink-900 mb-3">成本结构</h3>
+      <div class="text-sm">
+        <div class="flex items-baseline justify-between pb-3 mb-3 border-b border-slate-100">
+          <span class="text-ink-500">合计</span>
+          <span class="text-2xl font-bold num-tabular">¥{{ "{:.2f}".format(bom_total) }}</span>
+        </div>
+        {% for g in cost_summary %}
+        <div class="flex items-baseline justify-between py-1.5">
+          <span class="text-ink-700">{{ g.group }}</span>
+          <span class="num-tabular">
+            <span class="font-semibold">¥{{ "{:.2f}".format(g.cost) }}</span>
+            <span class="text-ink-500 text-xs ml-1">{{ g.pct }}%</span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 右：BOM 明细表 -->
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5 lg:col-span-2">
+      <h3 class="font-semibold text-ink-900 mb-3">单只鸡 BOM 明细</h3>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-ink-500 border-b border-slate-200">
+              <th class="text-left py-2 px-3 font-medium">分组</th>
+              <th class="text-left py-2 px-3 font-medium">物料</th>
+              <th class="text-right py-2 px-3 font-medium">用量</th>
+              <th class="text-right py-2 px-3 font-medium">单价</th>
+              <th class="text-right py-2 px-3 font-medium">成本</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in bom_breakdown %}
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
+              <td class="py-2 px-3 text-ink-500">{{ b.group }}</td>
+              <td class="py-2 px-3">{{ b.name }}<div class="text-xs text-ink-500">{{ b.note }}</div></td>
+              <td class="py-2 px-3 text-right num-tabular">{{ b.qty }} {{ b.unit }}</td>
+              <td class="py-2 px-3 text-right num-tabular text-ink-500">
+                {% if b.unit_price %}¥{{ "%.4f"|format(b.unit_price) }}{% else %}—{% endif %}
+              </td>
+              <td class="py-2 px-3 text-right num-tabular font-semibold">¥{{ "%.2f"|format(b.cost) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 包材明细 -->
+  {% if pkg_detail %}
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5 mb-8">
+    <h3 class="font-semibold text-ink-900 mb-3">近 90 天包材采购</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+      {% for p in pkg_detail %}
+      <div class="flex items-baseline justify-between py-1.5 px-2 rounded bg-slate-50">
+        <span class="text-ink-700 truncate">{{ p.name }}</span>
+        <span class="num-tabular font-semibold">¥{{ "{:,.0f}".format(p.amt) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- 采购频次表 -->
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 p-4 sm:p-5 mb-8">
+    <div class="flex items-baseline justify-between mb-3">
+      <h3 class="font-semibold text-ink-900">采购频次</h3>
+      <span class="text-xs text-ink-500">{{ freq_rows|length }} 个物料 · 按距今排序</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="text-ink-500 border-b border-slate-200">
+            <th class="text-left py-2 px-3 font-medium">物料</th>
+            <th class="text-left py-2 px-3 font-medium">最近一次</th>
+            <th class="text-right py-2 px-3 font-medium">距今</th>
+            <th class="text-right py-2 px-3 font-medium">累计次数</th>
+            <th class="text-right py-2 px-3 font-medium">采购单价</th>
+            <th class="text-right py-2 px-3 font-medium">累计金额</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in freq_rows %}
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-2 px-3">{{ r.name }}</td>
+            <td class="py-2 px-3 text-ink-500 num-tabular">{{ r.last_date }}</td>
+            <td class="py-2 px-3 text-right num-tabular">
+              {% if r.days_ago is not none %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs
+                {% if r.days_ago <= 7 %}bg-ok-soft text-ok-dark
+                {% elif r.days_ago <= 30 %}bg-warn-soft text-warn
+                {% else %}bg-brand-soft text-brand-dark{% endif %}">{{ r.days_ago }} 天</span>
+              {% else %}—{% endif %}
+            </td>
+            <td class="py-2 px-3 text-right num-tabular text-ink-500">{{ r.times }}</td>
+            <td class="py-2 px-3 text-right num-tabular text-ink-500">
+              {% if r.avg_price %}¥{{ "{:.2f}".format(r.avg_price) }}/{{ r.purchase_unit }}{% else %}—{% endif %}
+            </td>
+            <td class="py-2 px-3 text-right num-tabular">¥{{ "{:,.0f}".format(r.total_amt) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="text-xs text-ink-500 leading-relaxed">
+    口径说明：月度金额取自 purchase_orders.total_amount；单价/物料占比仅用 item_count=1 的单品订单（金额可清晰归属）；多品订单不计入物料占比。BOM 取 product_recipes.ROAST_CHICKEN_WHOLE，包材按近 90 天总金额 ÷ 鲜鸡只数摊销。卖鸡数取 stock_transactions 中"鲜鸡 OUT"。
+  </p>
+
+</main>
+
+<script>
+const monthly = {{ monthly | tojson }};
+const pieLabels = {{ pie_labels | tojson }};
+const pieValues = {{ pie_values | tojson }};
+const pieTotal  = {{ pie_total | tojson }};
+
+const PIE_COLORS = ['#FF4D4F','#FFB020','#1F8AFF','#52C41A','#722ED1','#13C2C2','#EB2F96','#FA541C','#A0D911','#2F54EB','#94A3B8'];
+
+new Chart(document.getElementById('monthChart'), {
+  type: 'bar',
+  data: {
+    labels: monthly.labels,
+    datasets: [{
+      label: '采购金额（元）',
+      data: monthly.amounts,
+      backgroundColor: '#FF4D4F',
+      borderRadius: 4,
+      maxBarThickness: 48,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `¥${ctx.parsed.y.toLocaleString()} · ${monthly.counts[ctx.dataIndex]} 单`
+        }
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#64748B' } },
+      y: { grid: { color: '#F1F5F9' }, ticks: { color: '#64748B', callback: (v) => '¥' + v/1000 + 'k' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: pieLabels,
+    datasets: [{
+      data: pieValues,
+      backgroundColor: pieLabels.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]),
+      borderWidth: 1,
+      borderColor: '#fff',
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '55%',
+    plugins: {
+      legend: { position: 'right', labels: { color: '#334155', boxWidth: 10, font: { size: 11 } } },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const v = ctx.parsed;
+            const pct = pieTotal ? (v / pieTotal * 100).toFixed(1) : 0;
+            return `${ctx.label}: ¥${v.toLocaleString()} (${pct}%)`;
+          }
+        }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

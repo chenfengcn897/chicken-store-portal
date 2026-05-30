@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福浔道数据门户 - {% block title %}{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: { DEFAULT: '#FF4D4F', soft: '#FFF1F0', dark: '#CF1322' },
+        ok:    { DEFAULT: '#52C41A', soft: '#F6FFED', dark: '#389E0D' },
+        warn:  { DEFAULT: '#FAAD14', soft: '#FFFBE6' },
+        ink:   { 900: '#0F172A', 700: '#334155', 500: '#64748B', 300: '#CBD5E1', 100: '#F1F5F9' },
+      },
+      fontFamily: {
+        sans: ['-apple-system','BlinkMacSystemFont','"PingFang SC"','"Microsoft YaHei"','sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px 0 rgba(15,23,42,0.04), 0 1px 3px 0 rgba(15,23,42,0.06)',
+        cardHover: '0 4px 12px 0 rgba(15,23,42,0.08)',
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { -webkit-font-smoothing: antialiased; }
+  .num-tabular { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+  @keyframes pulse-slow { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .alert-stock { animation: pulse-slow 2s infinite; }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-ink-900 font-sans min-h-screen">
+
+<!-- Top Nav -->
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+
+    <!-- Brand -->
+    <a href="{{ url_for('revenue') }}" class="flex items-center gap-2 shrink-0">
+      <div class="w-7 h-7 rounded-md bg-brand text-white flex items-center justify-center text-sm font-bold select-none">福</div>
+      <span class="font-semibold text-ink-900 text-sm hidden sm:block">福浔道数据门户</span>
+    </a>
+
+    <!-- Desktop nav links -->
+    <div class="hidden md:flex items-center gap-0.5 text-sm">
+      <a href="{{ url_for('revenue') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'revenue' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        营收概览
+      </a>
+      <a href="{{ url_for('inventory') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'inventory' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        库存状态
+      </a>
+      <a href="{{ url_for('orders') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'orders' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        订单查询
+      </a>
+      <a href="{{ url_for('logs') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'logs' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        采集日志
+      </a>
+      <a href="{{ url_for('dashboard') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'dashboard' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        库存仪表板
+      </a>
+      <a href="{{ url_for('revenue_dashboard') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'revenue_dashboard' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        营收看板
+      </a>
+      <a href="{{ url_for('cost_analysis') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'cost_analysis' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        成本分析
+      </a>
+      <a href="{{ url_for('shops_compare') }}"
+         class="px-3 py-1.5 rounded-md font-medium transition-colors
+                {% if request.endpoint == 'shops_compare' %}text-brand bg-brand/10{% else %}text-ink-500 hover:text-ink-900 hover:bg-slate-100{% endif %}">
+        双店对比
+      </a>
+      <a href="{{ url_for('logout') }}"
+         class="ml-3 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100 transition-colors border border-slate-200 text-xs">
+        退出
+      </a>
+    </div>
+
+    <!-- Mobile hamburger -->
+    <button id="nav-toggle" class="md:hidden p-2 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100 transition-colors" aria-label="菜单">
+      <svg id="icon-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+      <svg id="icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-slate-100 bg-white">
+    <div class="px-4 py-3 flex flex-col gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'revenue' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        营收概览
+      </a>
+      <a href="{{ url_for('inventory') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'inventory' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        库存状态
+      </a>
+      <a href="{{ url_for('orders') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'orders' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        订单查询
+      </a>
+      <a href="{{ url_for('logs') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'logs' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        采集日志
+      </a>
+      <a href="{{ url_for('dashboard') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'dashboard' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        库存仪表板
+      </a>
+      <a href="{{ url_for('revenue_dashboard') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'revenue_dashboard' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        营收看板
+      </a>
+      <a href="{{ url_for('cost_analysis') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'cost_analysis' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        成本分析
+      </a>
+      <a href="{{ url_for('shops_compare') }}"
+         class="px-3 py-2 rounded-md font-medium
+                {% if request.endpoint == 'shops_compare' %}text-brand bg-brand/10{% else %}text-ink-700 hover:bg-slate-100{% endif %}">
+        双店对比
+      </a>
+      <div class="border-t border-slate-100 mt-1 pt-2">
+        <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Page content -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const menu   = document.getElementById('mobile-menu');
+  const iconO  = document.getElementById('icon-open');
+  const iconC  = document.getElementById('icon-close');
+  toggle.addEventListener('click', () => {
+    const open = menu.classList.toggle('hidden');
+    iconO.classList.toggle('hidden', !open);
+    iconC.classList.toggle('hidden', open);
+  });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

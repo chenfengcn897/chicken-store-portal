@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}订单查询{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-ink-900">订单查询</h1>
+    <p class="text-sm text-ink-500 mt-0.5">共 <span class="font-semibold text-ink-700 num-tabular">{{ total }}</span> 条记录</p>
+  </div>
+</div>
+
+<!-- Filter card -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-card p-4 sm:p-5 mb-5">
+  <form class="flex flex-col sm:flex-row gap-3" method="GET">
+    <input
+      type="text"
+      name="shop"
+      placeholder="门店名称"
+      value="{{ shop }}"
+      class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm text-ink-900 placeholder-ink-300
+             focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+    >
+    <input
+      type="date"
+      name="date_from"
+      value="{{ date_from }}"
+      class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm text-ink-900
+             focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+    >
+    <input
+      type="date"
+      name="date_to"
+      value="{{ date_to }}"
+      class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm text-ink-900
+             focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+    >
+    <div class="flex gap-2">
+      <button
+        type="submit"
+        class="px-4 py-2 rounded-lg bg-brand hover:bg-brand-dark text-white text-sm font-semibold transition-colors shadow-sm"
+      >
+        查询
+      </button>
+      <a
+        href="{{ url_for('orders') }}"
+        class="px-4 py-2 rounded-lg border border-slate-200 text-sm text-ink-500 hover:text-ink-900 hover:border-slate-300 transition-colors"
+      >
+        重置
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- Table card -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 text-xs text-ink-500 uppercase tracking-wide border-b border-slate-100">
+          <th class="px-5 py-3 text-left font-medium">订单号</th>
+          <th class="px-5 py-3 text-left font-medium">门店</th>
+          <th class="px-5 py-3 text-left font-medium">平台</th>
+          <th class="px-5 py-3 text-left font-medium">类型</th>
+          <th class="px-5 py-3 text-left font-medium">日期</th>
+          <th class="px-5 py-3 text-right font-medium">收入</th>
+          <th class="px-5 py-3 text-left font-medium">商品</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in rows %}
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-5 py-3 font-mono text-xs text-ink-400 whitespace-nowrap">{{ r.order_no[:16] }}…</td>
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-ink-700">
+              {{ r.shop_name }}
+            </span>
+          </td>
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-600">
+              {{ r.platform }}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-ink-500 text-xs">{{ r.order_type }}</td>
+          <td class="px-5 py-3 text-ink-600 num-tabular whitespace-nowrap">{{ r.order_date }}</td>
+          <td class="px-5 py-3 text-right font-semibold text-ok num-tabular">¥{{ "%.2f"|format(r.income or 0) }}</td>
+          <td class="px-5 py-3 text-ink-500 text-xs max-w-xs truncate">{{ (r.products or '—')[:30] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="px-5 py-4 border-t border-slate-100 flex items-center justify-center gap-1">
+    {% for p in range(1, total_pages+1) %}
+      {% if p <= 3 or p > total_pages-2 or (p >= page-2 and p <= page+2) %}
+        <a href="?page={{ p }}&shop={{ shop }}&date_from={{ date_from }}&date_to={{ date_to }}"
+           class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors
+                  {% if p == page %}bg-brand text-white shadow-sm{% else %}text-ink-500 hover:bg-slate-100{% endif %}">
+          {{ p }}
+        </a>
+      {% elif p == 4 or p == total_pages-2 %}
+        <span class="w-8 h-8 flex items-center justify-center text-ink-300 text-sm">…</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

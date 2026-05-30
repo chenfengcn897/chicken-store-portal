@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>福浔道营收看板</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: { DEFAULT: '#FF4D4F', soft: '#FFF1F0', dark: '#CF1322' },
+        ok:    { DEFAULT: '#52C41A', soft: '#F6FFED', dark: '#389E0D' },
+        ink:   { 900: '#0F172A', 700: '#334155', 500: '#64748B', 300: '#CBD5E1', 100: '#F1F5F9' },
+      },
+      fontFamily: {
+        sans: ['-apple-system','BlinkMacSystemFont','"PingFang SC"','"Microsoft YaHei"','sans-serif'],
+      },
+      boxShadow: {
+        card: '0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06)',
+        cardHover: '0 4px 12px 0 rgba(15, 23, 42, 0.08)',
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { -webkit-font-smoothing: antialiased; }
+  .num-tabular { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+  .chart-wrap { position: relative; height: 280px; }
+  @media (min-width: 640px) { .chart-wrap { height: 320px; } }
+</style>
+</head>
+<body class="bg-slate-50 text-ink-900 font-sans">
+
+<!-- 顶部导航 -->
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-md bg-brand text-white flex items-center justify-center text-sm font-bold">福</div>
+      <span class="font-semibold text-ink-900">福浔道营收</span>
+    </div>
+    <div class="hidden sm:flex items-center gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">营收</a>
+      <a href="{{ url_for('inventory') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">库存</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">订单</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">仪表板</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-1.5 rounded-md text-brand bg-brand/10 font-medium">营收看板</a>
+      <a href="{{ url_for("shops_compare") }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">成本分析</a>
+      <a href="{{ url_for('logout') }}" class="ml-2 px-3 py-1.5 rounded-md text-ink-500 hover:text-ink-900 hover:bg-slate-100">退出</a>
+    </div>
+    <button id="nav-toggle" class="sm:hidden p-2 rounded-md text-ink-500 hover:bg-slate-100 transition-colors" aria-label="菜单">
+      <svg id="icon-open" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <svg id="icon-close" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="mobile-menu" class="hidden sm:hidden border-t border-slate-100 bg-white">
+    <div class="px-4 py-3 flex flex-col gap-1 text-sm">
+      <a href="{{ url_for('revenue') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">营收概览</a>
+      <a href="{{ url_for('inventory') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存状态</a>
+      <a href="{{ url_for('orders') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">订单查询</a>
+      <a href="{{ url_for('logs') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">采集日志</a>
+      <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">库存仪表板</a>
+      <a href="{{ url_for('revenue_dashboard') }}" class="px-3 py-2 rounded-md text-brand bg-brand/10 font-medium">营收看板</a>
+      <a href="{{ url_for('shops_compare') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">双店对比</a>
+      <a href="{{ url_for('cost_analysis') }}" class="px-3 py-2 rounded-md text-ink-700 hover:bg-slate-100">成本分析</a>
+      <div class="border-t border-slate-100 mt-1 pt-2">
+        <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded-md text-ink-500 hover:bg-slate-100 block">退出登录</a>
+      </div>
+    </div>
+  </div>
+</nav>
+<script>
+  (function(){
+    var t=document.getElementById('nav-toggle'),m=document.getElementById('mobile-menu'),o=document.getElementById('icon-open'),c=document.getElementById('icon-close');
+    t.addEventListener('click',function(){var h=m.classList.toggle('hidden');o.classList.toggle('hidden',!h);c.classList.toggle('hidden',h);});
+  })();
+</script>
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+  <!-- 标题 -->
+  <header class="flex items-end justify-between mb-6">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">营收看板</h1>
+      <p class="text-sm text-ink-500 mt-1">双店营收 · 订单 · 平台分布 · 数据截至 {{ latest.strftime("%Y-%m-%d") }}</p>
+    </div>
+    <span class="text-xs text-ink-500 num-tabular">{{ now.strftime("%m/%d %H:%M") if now else "" }}</span>
+  </header>
+
+  <!-- 本周 vs 上周（3 张卡） -->
+  <section class="mb-3">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold text-ink-900">本周 vs 上周</h2>
+      <span class="text-xs text-ink-500 num-tabular">本周 {{ wow_period.this_from }}–{{ wow_period.this_to }} · 上周 {{ wow_period.last_from }}–{{ wow_period.last_to }}</span>
+    </div>
+  </section>
+  <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    {% for c in [wow_total] + wow_cards %}
+    <div class="bg-white rounded-xl shadow-card hover:shadow-cardHover transition border border-slate-100 overflow-hidden">
+      <div class="h-1 {{ 'bg-ok' if c.up else 'bg-brand' }}"></div>
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-ink-700">{{ c.name }}</span>
+          {% if c.pct is not none %}
+            {% if c.up %}
+            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-ok-soft text-ok-dark num-tabular">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+              {{ "%.1f"|format(c.pct) }}%
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-brand-soft text-brand-dark num-tabular">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              {{ "%.1f"|format(c.pct) }}%
+            </span>
+            {% endif %}
+          {% else %}
+            <span class="text-xs text-ink-300">—</span>
+          {% endif %}
+        </div>
+        <div class="flex items-baseline gap-1 mb-3">
+          <span class="text-3xl font-bold num-tabular {{ 'text-ok-dark' if c.up else 'text-brand' }}">¥{{ "{:,.0f}".format(c.this_income) }}</span>
+        </div>
+        <dl class="space-y-1.5 text-xs border-t border-slate-100 pt-3">
+          <div class="flex justify-between">
+            <dt class="text-ink-500">上周营收</dt>
+            <dd class="num-tabular text-ink-700">¥{{ "{:,.0f}".format(c.last_income) }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-ink-500">营收差额</dt>
+            <dd class="num-tabular {{ 'text-ok-dark' if c.up else 'text-brand-dark' }} font-medium">
+              {{ '+' if c.up else '' }}¥{{ "{:,.0f}".format(c.delta) }}
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-ink-500">订单 本/上</dt>
+            <dd class="num-tabular text-ink-700">{{ c.this_orders }} / {{ c.last_orders }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- 双店日营收趋势 -->
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 mb-6 overflow-hidden">
+    <div class="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="font-semibold text-ink-900">双店日营收趋势 · 近 30 天</h2>
+      <div class="hidden sm:flex items-center gap-3 text-xs text-ink-500">
+        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-brand"></span>五四北店</span>
+        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-ok"></span>湖前店</span>
+      </div>
+    </div>
+    <div class="p-4 sm:p-5">
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- 平台分布 + 客单价趋势 -->
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+      <div class="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="font-semibold text-ink-900">平台订单分布</h2>
+        <span class="text-xs text-ink-500 num-tabular">合计 {{ "{:,}".format(platform_data.total) }} 单</span>
+      </div>
+      <div class="p-4 sm:p-5">
+        <div class="chart-wrap"><canvas id="platformChart"></canvas></div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-card border border-slate-100 overflow-hidden">
+      <div class="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="font-semibold text-ink-900">客单价趋势 · 近 30 天</h2>
+        <div class="hidden sm:flex items-center gap-3 text-xs text-ink-500">
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-brand"></span>五四北</span>
+          <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-ok"></span>湖前</span>
+        </div>
+      </div>
+      <div class="p-4 sm:p-5">
+        <div class="chart-wrap"><canvas id="aovChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 双店近 7 天对比表 -->
+  <section class="bg-white rounded-xl shadow-card border border-slate-100 mb-8 overflow-hidden">
+    <div class="px-4 sm:px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <h2 class="font-semibold text-ink-900">双店近 7 天对比</h2>
+      <span class="text-xs text-ink-500">营收 · 订单 · 客单价</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-ink-500 text-xs uppercase tracking-wider">
+          <tr>
+            <th class="text-left font-medium px-4 sm:px-5 py-2.5 w-24">日期</th>
+            <th class="text-right font-medium px-3 py-2.5 num-tabular">五四北 营收</th>
+            <th class="text-right font-medium px-3 py-2.5 num-tabular">单</th>
+            <th class="text-right font-medium px-3 py-2.5 num-tabular">客单价</th>
+            <th class="text-right font-medium px-3 py-2.5 num-tabular">湖前 营收</th>
+            <th class="text-right font-medium px-3 py-2.5 num-tabular">单</th>
+            <th class="text-right font-medium px-3 py-2.5 num-tabular">客单价</th>
+            <th class="text-right font-medium px-4 sm:px-5 py-2.5 num-tabular">合计营收</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for r in cmp7_table %}
+          <tr class="hover:bg-slate-50/60">
+            <td class="px-4 sm:px-5 py-3 font-medium text-ink-900 whitespace-nowrap">
+              {{ r.date }} <span class="text-ink-300 text-xs ml-1">周{{ r.weekday }}</span>
+            </td>
+            <td class="px-3 py-3 text-right num-tabular text-ink-700">¥{{ "{:,.0f}".format(r.shops[1].income) }}</td>
+            <td class="px-3 py-3 text-right num-tabular text-ink-500">{{ r.shops[1].orders }}</td>
+            <td class="px-3 py-3 text-right num-tabular text-ink-500">¥{{ "%.1f"|format(r.shops[1].aov) }}</td>
+            <td class="px-3 py-3 text-right num-tabular text-ink-700">¥{{ "{:,.0f}".format(r.shops[2].income) }}</td>
+            <td class="px-3 py-3 text-right num-tabular text-ink-500">{{ r.shops[2].orders }}</td>
+            <td class="px-3 py-3 text-right num-tabular text-ink-500">¥{{ "%.1f"|format(r.shops[2].aov) }}</td>
+            <td class="px-4 sm:px-5 py-3 text-right num-tabular font-semibold text-ink-900">¥{{ "{:,.0f}".format(r.total_income) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="px-5 py-10 text-center text-ink-300 text-sm">暂无数据</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="text-center text-xs text-ink-300 pb-4">
+    福浔道烤鸡 · 数据来源：daily_revenues + merged_orders
+  </footer>
+</main>
+
+<script id="rd-data" type="application/json">
+{
+  "labels": {{ date_labels|tojson }},
+  "trend":  {{ trend_datasets|tojson }},
+  "aov":    {{ aov_datasets|tojson }},
+  "platform": {{ platform_data|tojson }}
+}
+</script>
+<script>
+(function() {
+  const D = JSON.parse(document.getElementById('rd-data').textContent);
+
+  const fmtY = v => '¥' + (v >= 1000 ? (v/1000).toFixed(1) + 'k' : v.toFixed(0));
+  const commonScales = {
+    x: { grid: { display: false }, ticks: { color: '#64748B', font: { size: 11 } } },
+    y: { grid: { color: '#F1F5F9' }, border: { display: false }, ticks: { color: '#64748B', font: { size: 11 }, callback: fmtY } }
+  };
+
+  // 趋势折线
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: D.labels,
+      datasets: D.trend.map(s => ({
+        label: s.label,
+        data:  s.data,
+        borderColor: s.color,
+        backgroundColor: s.color + '20',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: true,
+        pointRadius: 2,
+        pointHoverRadius: 5
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ctx.dataset.label + ': ¥' + ctx.parsed.y.toLocaleString() }
+        }
+      },
+      scales: commonScales
+    }
+  });
+
+  // 客单价折线
+  new Chart(document.getElementById('aovChart'), {
+    type: 'line',
+    data: {
+      labels: D.labels,
+      datasets: D.aov.map(s => ({
+        label: s.label,
+        data:  s.data,
+        borderColor: s.color,
+        backgroundColor: s.color + '15',
+        borderWidth: 2,
+        tension: 0.3,
+        fill: false,
+        pointRadius: 2,
+        pointHoverRadius: 5
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ctx.dataset.label + ': ¥' + ctx.parsed.y.toFixed(1) }
+        }
+      },
+      scales: {
+        x: commonScales.x,
+        y: { ...commonScales.y, ticks: { color: '#64748B', font: { size: 11 }, callback: v => '¥' + v.toFixed(0) } }
+      }
+    }
+  });
+
+  // 平台饼图
+  new Chart(document.getElementById('platformChart'), {
+    type: 'doughnut',
+    data: {
+      labels: D.platform.labels,
+      datasets: [{
+        data: D.platform.values,
+        backgroundColor: D.platform.colors,
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#334155', font: { size: 12 }, padding: 12, boxWidth: 10, boxHeight: 10, usePointStyle: true }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = total ? (ctx.parsed / total * 100).toFixed(1) : 0;
+              return ctx.label + ': ' + ctx.parsed.toLocaleString() + ' 单 (' + pct + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

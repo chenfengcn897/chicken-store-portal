@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}库存状态{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-ink-900">库存状态</h1>
+    <p class="text-sm text-ink-500 mt-0.5">物料库存 · 预警提示 · 实时更新</p>
+  </div>
+  <!-- Legend -->
+  <div class="flex items-center gap-3 text-xs text-ink-500">
+    <span class="flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-brand inline-block"></span>库存不足
+    </span>
+    <span class="flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-warn inline-block"></span>库存偏低
+    </span>
+    <span class="flex items-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-ok inline-block"></span>正常
+    </span>
+  </div>
+</div>
+
+<!-- Table card -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 text-xs text-ink-500 uppercase tracking-wide border-b border-slate-100">
+          <th class="px-5 py-3 text-left font-medium">物料名称</th>
+          <th class="px-5 py-3 text-left font-medium">分类</th>
+          <th class="px-5 py-3 text-left font-medium">单位</th>
+          <th class="px-5 py-3 text-right font-medium">当前库存</th>
+          <th class="px-5 py-3 text-right font-medium">最低库存</th>
+          <th class="px-5 py-3 text-right font-medium">单价</th>
+          <th class="px-5 py-3 text-center font-medium">状态</th>
+          <th class="px-5 py-3 text-right font-medium">更新时间</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in rows %}
+        {% set ratio = (r.current_stock / r.min_stock) if r.min_stock > 0 else 999 %}
+        <tr class="hover:bg-slate-50 transition-colors
+                   {% if ratio < 1 %}bg-brand/5{% elif ratio < 1.5 %}bg-warn/5{% endif %}">
+          <td class="px-5 py-3 font-medium text-ink-900">{{ r.name }}</td>
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-ink-600">
+              {{ r.category }}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-ink-500">{{ r.unit }}</td>
+          <td class="px-5 py-3 text-right font-semibold num-tabular
+                     {% if ratio < 1 %}text-brand{% elif ratio < 1.5 %}text-warn{% else %}text-ink-900{% endif %}">
+            {{ "%.1f"|format(r.current_stock) }}
+          </td>
+          <td class="px-5 py-3 text-right text-ink-400 num-tabular">{{ "%.1f"|format(r.min_stock) }}</td>
+          <td class="px-5 py-3 text-right text-ink-500 num-tabular">
+            {% if r.unit_price %}¥{{ "%.2f"|format(r.unit_price) }}{% else %}<span class="text-ink-300">—</span>{% endif %}
+          </td>
+          <td class="px-5 py-3 text-center">
+            {% if ratio < 1 %}
+              <span class="alert-stock inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-brand/10 text-brand">
+                库存不足
+              </span>
+            {% elif ratio < 1.5 %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-warn/15 text-warn">
+                库存偏低
+              </span>
+            {% else %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-ok/10 text-ok">
+                正常
+              </span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-right text-xs text-ink-400 num-tabular whitespace-nowrap">
+            {{ r.updated_at.strftime('%m-%d %H:%M') if r.updated_at else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
