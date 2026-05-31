@@ -736,14 +736,14 @@ def dashboard():
 
             # Dynamic rows - last 3 days consumption from inventory_ledger
             today = date.today()
-            date_labels = [(today - timedelta(days=i)).strftime('%m/%d') for i in range(2, -1, -1)]
+            date_labels = [(today - timedelta(days=i)).strftime('%m/%d') for i in range(6, -1, -1)]
             dynamic_rows = []
             for display, pattern in core_names:
                 cur.execute("SELECT id, name FROM materials WHERE name LIKE %s LIMIT 1", (pattern,))
                 mat = cur.fetchone()
                 if mat:
                     days_data = []
-                    for i in range(2, -1, -1):
+                    for i in range(6, -1, -1):
                         d = today - timedelta(days=i)
                         cur.execute(
                             "SELECT type, SUM(ABS(quantity)) as qty FROM inventory_ledger "
