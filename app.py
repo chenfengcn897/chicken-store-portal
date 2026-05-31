@@ -65,41 +65,143 @@ UNIT_CONVERSION = {
 _recipe_cache = {}
 
 
+def _normalize_product_name(raw_name):
+    """将订单产品名规范化，便于匹配 product_recipes.product_name
+    例: '招牌爆汁脆皮烧鸡（半只）只用鲜鸡烤制[酸梅酱+半只切块]' -> '招牌脆皮烧鸡-半只'
+    """
+    name = raw_name
+    # 去掉方括号内容（规格/配料）
+    name = re.sub(r'\[.*?\]', '', name)
+    # 去掉花括号内容（JSON规格）
+    name = re.sub(r'\{.*?\}', '', name)
+    # 去掉括号内的价格
+    name = re.sub(r'（[\d.]+\*\d+）', '', name)
+    name = re.sub(r'\([\d.]+\*\d+\)', '', name)
+    # 去掉"只用鲜鸡烤制"等描述性后缀
+    name = re.sub(r'只用鲜鸡烤制.*', '', name)
+    name = re.sub(r'[🔥🌶️]+', '', name)  # 去掉 emoji
+    name = name.strip()
+
+    # 关键词映射表：订单名关键词 -> product_recipes 精确名
+    KEYWORD_MAP = [
+        (['招牌', '烧鸡', '整只'], '招牌脆皮烧鸡-整只'),
+        (['招牌', '烧鸡', '半只'], '招牌脆皮烧鸡-半只'),
+        (['招牌', '烧鸡', '一只'], '招牌脆皮烧鸡-整只'),
+        (['芝麻', '烧鸡', '整只'], '脆皮芝麻烧鸡-整只'),
+        (['芝麻', '烧鸡', '半只'], '脆皮芝麻烧鸡-半只'),
+        (['烧排骨', '大份'], '烧排骨-大份'),
+        (['烧排骨', '小份'], '烧排骨-小份'),
+        (['猪肋排', '小份'], '烧排骨-小份'),
+        (['猪肋排', '大份'], '烧排骨-大份'),
+        (['乳鸽'], '福浔道港式乳鸽'),
+        (['糯米鸡饭'], '糯米鸡饭'),
+        (['鸡爪'], '鸡爪（盒）'),
+        (['红糖馒头'], '手工红糖馒头'),
+        (['肉粽'], '手工肉粽'),
+        (['可口可乐'], '可口可乐（瓶装）'),
+        (['百威'], '百威啤酒'),
+        (['喜力'], '喜力啤酒'),
+        (['王老吉'], '王老吉'),
+        (['鲜橙多'], '鲜橙多'),
+        (['金桔柠檬'], '统一金桔柠檬'),
+        (['酸梅酱'], '酸梅酱'),
+        (['金桔油'], '潮汕金桔油'),
+        (['辣椒粉'], '辣椒粉'),
+        (['甜辣酱'], '甜辣酱'),
+        (['腊八蒜'], '腊八蒜'),
+        (['花生米'], '花生米'),
+        (['胡椒粉'], '胡椒粉'),
+    ]
+    for keywords, mapped in KEYWORD_MAP:
+        if all(kw in name for kw in keywords):
+            return mapped
+    return name
+
+
+def _calc_recipe_total(rows):
+    """计算配方行的总成本"""
+    total = 0.0
+    for r in rows:
+        mat_name = r["material_name"] or ""
+        raw_price = float(r["unit_price"] or 0)
+        qty = float(r["quantity"] or 0)
+        conv = UNIT_CONVERSION.get(mat_name, 1)
+        unit_price = raw_price / conv if conv > 0 else raw_price
+        total += unit_price * qty
+    return total
+
+
 def get_recipe_cost(product_name):
-    """根据产品名称从 product_recipes + materials 计算配方成本，使用缓存避免重复查询"""
+    """根据产品名称从 product_recipes + materials 计算配方成本，使用缓存避免重复查询。
+    当 BOM 数据不完整（合计成本低于合理阈值）时，回退到兜底成本常量。"""
     if product_name in _recipe_cache:
         return _recipe_cache[product_name]
+
+    # 兜底成本常量（BOM 数据不完整时使用）
+    FALLBACK_COSTS = {
+        '招牌脆皮烧鸡-整只':   34.29,
+        '招牌脆皮烧鸡-半只':   17.15,
+        '脆皮芝麻烧鸡-整只':   34.29,
+        '脆皮芝麻烧鸡-半只':   17.15,
+        '烧排骨-大份':         25.0,
+        '烧排骨-小份':         15.0,
+        '福浔道港式乳鸽':      15.0,
+    }
+    # 各产品合理成本下限（低于此值视为 BOM 不完整）
+    MIN_COST_THRESHOLD = {
+        '招牌脆皮烧鸡-整只':   20.0,
+        '招牌脆皮烧鸡-半只':   10.0,
+        '脆皮芝麻烧鸡-整只':   20.0,
+        '脆皮芝麻烧鸡-半只':   10.0,
+        '烧排骨-大份':         10.0,
+        '烧排骨-小份':          5.0,
+        '福浔道港式乳鸽':       8.0,
+    }
+
+    # 先规范化名称
+    normalized = _normalize_product_name(product_name)
 
     conn = get_db()
     try:
         with conn.cursor() as cur:
+            # 1. 精确匹配规范化后的名称
             cur.execute("""
                 SELECT r.material_name, r.quantity, r.unit, m.unit_price
                 FROM product_recipes r
                 LEFT JOIN materials m ON r.material_id = m.id
                 WHERE r.product_name = %s
                 ORDER BY r.sort_order
-            """, (product_name,))
+            """, (normalized,))
             rows = cur.fetchall()
 
-            if not rows and len(product_name) >= 4:
+            # 2. 如果规范化名称没匹配，尝试原始名称精确匹配
+            if not rows and normalized != product_name:
+                cur.execute("""
+                    SELECT r.material_name, r.quantity, r.unit, m.unit_price
+                    FROM product_recipes r
+                    LEFT JOIN materials m ON r.material_id = m.id
+                    WHERE r.product_name = %s
+                    ORDER BY r.sort_order
+                """, (product_name,))
+                rows = cur.fetchall()
+
+            # 3. 最后降级：模糊匹配（取前6字）
+            if not rows and len(normalized) >= 4:
                 cur.execute("""
                     SELECT r.material_name, r.quantity, r.unit, m.unit_price
                     FROM product_recipes r
                     LEFT JOIN materials m ON r.material_id = m.id
                     WHERE r.product_name LIKE %s
                     ORDER BY r.sort_order
-                """, (f"%{product_name[:6]}%",))
+                """, (f"%{normalized[:6]}%",))
                 rows = cur.fetchall()
 
-            total = 0.0
-            for r in rows:
-                mat_name = r["material_name"] or ""
-                raw_price = float(r["unit_price"] or 0)
-                qty = float(r["quantity"] or 0)
-                conv = UNIT_CONVERSION.get(mat_name, 1)
-                unit_price = raw_price / conv if conv > 0 else raw_price
-                total += unit_price * qty
+            total = _calc_recipe_total(rows)
+
+            # 4. 若 BOM 合计低于合理阈值，使用兜底常量
+            threshold = MIN_COST_THRESHOLD.get(normalized, 0)
+            if total < threshold and normalized in FALLBACK_COSTS:
+                total = FALLBACK_COSTS[normalized]
 
             _recipe_cache[product_name] = total
             return total
