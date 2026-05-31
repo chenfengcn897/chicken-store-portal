@@ -749,18 +749,23 @@ def dashboard():
             date_labels = [(today - timedelta(days=i)).strftime('%m/%d') for i in range(6, -1, -1)]
             dynamic_rows = []
             for display, pattern in core_names:
-                cur.execute("SELECT id, name FROM materials WHERE name LIKE %s LIMIT 1", (pattern,))
-                mat = cur.fetchone()
-                if mat:
-                    days_data = []
-                    for i in range(6, -1, -1):
-                        d = today - timedelta(days=i)
-                        cur.execute(
-                            "SELECT type, SUM(ABS(quantity)) as qty FROM inventory_ledger "
-                            "WHERE material_id=%s AND date=%s GROUP BY type",
-                            (mat['id'], d))
-                        entries = []
-                        for le in cur.fetchall():
+                cur.execute("SELECT m.name FROM materials m WHERE m.name LIKE %s GROUP BY m.name LIMIT 1", (pattern,))
+                mat_row = cur.fetchone()
+                if not mat_row:
+                    continue
+                mat_name = mat_row['name']
+                cur.execute('SELECT id FROM materials WHERE name=%s', (mat_name,))
+                mat_ids = [str(r['id']) for r in cur.fetchall()]
+                placeholders = ','.join(['%s'] * len(mat_ids))
+                days_data = []
+                for i in range(6, -1, -1):
+                    d = today - timedelta(days=i)
+                    cur.execute(
+                        "SELECT type, SUM(ABS(quantity)) as qty FROM inventory_ledger "
+                        "WHERE material_id IN (%s) AND date=%%s GROUP BY type" % placeholders,
+                        mat_ids + [d])
+                    entries = []
+                    for le in cur.fetchall():
                             t = le['type']
                             q = float(le['qty'] or 0)
                             if t == 'SALE':
@@ -772,20 +777,20 @@ def dashboard():
                             else:
                                 entries.append({'label': f'{t}{q:.0f}', 'color': 'gray'})
                         # 当天下单采购量
-                        cur.execute(
-                            'SELECT COALESCE(SUM(poi.purchase_count * '
-                            "CASE WHEN m.name='鲜鸡' THEN 1 WHEN m.name='土猪内排' THEN 13 "
-                            "WHEN m.name='福浔道港式乳鸽' THEN 30 ELSE 1 END), 0) as qty "
-                            'FROM purchase_orders po '
-                            'JOIN purchase_order_items poi ON po.order_no = poi.order_no '
-                            'JOIN materials m ON poi.material_id = m.id '
-                            "WHERE DATE(po.purchase_time)=%s AND poi.material_id=%s",
-                            (d.isoformat(), mat['id']))
-                        po_qty = float(cur.fetchone()['qty'] or 0)
-                        if po_qty > 0:
-                            entries.append({'label': f'采{po_qty:.0f}', 'color': 'blue'})
-                        days_data.append(entries)
-                    dynamic_rows.append({'name': mat['name'], 'days': days_data})
+                    cur.execute(
+                        'SELECT COALESCE(SUM(poi.purchase_count * '
+                        "CASE WHEN m.name='鲜鸡' THEN 1 WHEN m.name='土猪内排' THEN 13 "
+                        "WHEN m.name='福浔道港式乳鸽' THEN 30 ELSE 1 END), 0) as qty "
+                        'FROM purchase_orders po '
+                        'JOIN purchase_order_items poi ON po.order_no = poi.order_no '
+                        'JOIN materials m ON poi.material_id = m.id '
+                        "WHERE DATE(po.purchase_time)=%s AND poi.material_id=%s",
+                        (d.isoformat(), mat_ids[0]))
+                    po_qty = float(cur.fetchone()['qty'] or 0)
+                    if po_qty > 0:
+                        entries.append({'label': f'采{po_qty:.0f}', 'color': 'blue'})
+                    days_data.append(entries)
+                dynamic_rows.append({'name': display, 'days': days_data})
 
     finally:
         conn.close()
