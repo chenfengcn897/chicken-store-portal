@@ -731,15 +731,18 @@ def dashboard():
                         "AND l.date>=DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND l.date<CURDATE()",
                         (row['name'],))
                     avg_row = cur.fetchone()
-                    if avg_row and float(avg_row['daily_avg'] or 0) > 0:
+                    # 鸡爪是副产品，不需要安全线
+                    if '鸡爪' in row['name']:
+                        safety = 0
+                    elif avg_row and float(avg_row['daily_avg'] or 0) > 0:
                         _lead = int(avg_row['lead_days'] or 1)
-                        _extra = 2 if '鸡' in row['name'] else 1
+                        _extra = 2 if '鸡' in row["name"] else 1
                         _raw = float(avg_row['daily_avg']) * (_lead + _extra)
                         _unit = 30 if '鸡' in row['name'] else 13 if '排' in row['name'] else 60 if '乳鸽' in row['name'] else 1
                         safety = int((_raw + _unit - 1) // _unit) * _unit if _unit > 0 else _raw
                     else:
                         safety = float(row['min_stock'] or 0)
-                    deficit = max(0, safety - total)
+                    deficit = max(0, safety - total) if safety > 0 else 0
                     card = {
                         'display': row['name'],
                         'unit': row['unit'] or '',
