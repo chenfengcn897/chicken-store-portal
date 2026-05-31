@@ -54,6 +54,7 @@
       <thead>
         <tr class="bg-slate-50 text-xs text-ink-500 uppercase tracking-wide border-b border-slate-100">
           <th class="px-4 py-3 text-left font-medium">时间</th>
+          <th class="px-4 py-3 text-left font-medium">订单号</th>
           <th class="px-4 py-3 text-left font-medium">门店</th>
           <th class="px-4 py-3 text-left font-medium">平台</th>
           <th class="px-4 py-3 text-left font-medium">商品</th>
@@ -70,6 +71,7 @@
             {{ r.order_date }}<br>
             <span class="text-ink-300">{{ r.order_time.strftime('%H:%M') if r.order_time else '' }}</span>
           </td>
+          <td class="px-4 py-3 text-xs text-ink-400 num-tabular font-mono">{{ r.order_no }}</td>
           <td class="px-4 py-3">
             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-ink-700">
               {{ r.shop_name }}
