@@ -442,16 +442,24 @@ def calc_material_cost(products_str):
     if not products_str:
         return 0.0
     cost = 0.0
-    for item in products_str.split(','):
-        item = item.strip()
+    # 提取商品名（价格×数量）匹配，避免 JSON 里的逗号干扰
+    import re as _re
+    # 匹配模式: 任意字符后跟（价格×数量），用正则定位每个商品
+    items = _re.findall(r'[^（]+（[\d.]+[×x*]\d+）', products_str)
+    if not items:
+        items = [products_str]
+    for item in items:
+        item = item.strip().strip(',').strip()
         if not item:
             continue
         # 提取数量
-        qty_match = re.search(r'[×x*](\d+)', item)
-        qty = int(qty_match.group(1)) if qty_match else 1
-        # 去掉数量和价格，只保留产品名
-        name = re.sub(r'[×x*]\d+.*', '', item).strip()
-        name = re.sub(r'¥[\d.]+', '', name).strip()
+        qty_match = _re.search(r'[×x*](\d+）?)', item)
+        qty = int(qty_match.group(1).rstrip('）')) if qty_match else 1
+        # 去掉括号及价格数量，只保留产品名
+        name = _re.sub(r'（[\d.]+[×x*]\d+）', '', item).strip()
+        name = _re.sub(r'¥[\d.]+', '', name).strip()
+        # 去除尾部多余的字符（逗号、JSON残片等）
+        name = _re.sub(r'[,\[\]{].*', '', name).strip()
         # 使用动态配方成本
         recipe_cost = get_recipe_cost(name)
         cost += recipe_cost * qty
