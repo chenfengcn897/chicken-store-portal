@@ -61,6 +61,52 @@ UNIT_CONVERSION = {
     "百事可乐（瓶装）": 24,
 }
 
+# ── 配方成本缓存（从 product_recipes + materials 动态计算）──────────────
+_recipe_cache = {}
+
+
+def get_recipe_cost(product_name):
+    """根据产品名称从 product_recipes + materials 计算配方成本，使用缓存避免重复查询"""
+    if product_name in _recipe_cache:
+        return _recipe_cache[product_name]
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT r.material_name, r.quantity, r.unit, m.unit_price
+                FROM product_recipes r
+                LEFT JOIN materials m ON r.material_id = m.id
+                WHERE r.product_name = %s
+                ORDER BY r.sort_order
+            """, (product_name,))
+            rows = cur.fetchall()
+
+            if not rows and len(product_name) >= 4:
+                cur.execute("""
+                    SELECT r.material_name, r.quantity, r.unit, m.unit_price
+                    FROM product_recipes r
+                    LEFT JOIN materials m ON r.material_id = m.id
+                    WHERE r.product_name LIKE %s
+                    ORDER BY r.sort_order
+                """, (f"%{product_name[:6]}%",))
+                rows = cur.fetchall()
+
+            total = 0.0
+            for r in rows:
+                mat_name = r["material_name"] or ""
+                raw_price = float(r["unit_price"] or 0)
+                qty = float(r["quantity"] or 0)
+                conv = UNIT_CONVERSION.get(mat_name, 1)
+                unit_price = raw_price / conv if conv > 0 else raw_price
+                total += unit_price * qty
+
+            _recipe_cache[product_name] = total
+            return total
+    finally:
+        conn.close()
+
+
 AUTH_TOKEN = 'fxd2026'
 
 app = Flask(__name__)
@@ -287,15 +333,10 @@ def recipes():
 # ── /orders (订单查询 + 毛利计算) ────────────────────────────────────────────
 
 # 物料成本计算：从 products 字段解析商品名和数量
-COST_WHOLE_CHICKEN = 34.29   # 整只鸡
-COST_HALF_CHICKEN  = 17.15   # 半只鸡
-COST_RIBS_LARGE    = 25.0    # 排骨大份
-COST_RIBS_SMALL    = 15.0    # 排骨小份
-COST_PIGEON        = 15.0    # 乳鸽
 
 
 def calc_material_cost(products_str):
-    """从 products 字段解析物料成本"""
+    """从 products 字段解析物料成本（动态从 product_recipes 计算）"""
     if not products_str:
         return 0.0
     cost = 0.0
@@ -309,18 +350,9 @@ def calc_material_cost(products_str):
         # 去掉数量和价格，只保留产品名
         name = re.sub(r'[×x*]\d+.*', '', item).strip()
         name = re.sub(r'¥[\d.]+', '', name).strip()
-        if '整只' in name:
-            cost += COST_WHOLE_CHICKEN * qty
-        elif '半只' in name:
-            cost += COST_HALF_CHICKEN * qty
-        elif '排骨' in name and ('大' in name or '大份' in name):
-            cost += COST_RIBS_LARGE * qty
-        elif '排骨' in name and ('小' in name or '小份' in name):
-            cost += COST_RIBS_SMALL * qty
-        elif '排骨' in name:
-            cost += COST_RIBS_LARGE * qty  # 默认大份
-        elif '乳鸽' in name:
-            cost += COST_PIGEON * qty
+        # 使用动态配方成本
+        recipe_cost = get_recipe_cost(name)
+        cost += recipe_cost * qty
     return cost
 
 
