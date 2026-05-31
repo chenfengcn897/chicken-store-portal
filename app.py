@@ -457,21 +457,31 @@ def calc_material_cost(products_str):
     # 提取商品名（价格×数量）匹配，避免 JSON 里的逗号干扰
     import re as _re
     # 匹配模式: 任意字符后跟（价格×数量），用正则定位每个商品
-    # 更好的解析方式：按逗号分割（处理JSON内部的逗号），再取每个段最末尾的（价格*数量）部分
+    # 按 ） 分割商品，每个商品后以价格括号结尾
     raw_items = products_str.split('）')
     items = []
     for part in raw_items:
         part = part.strip()
-        if not part or part == '':
+        if not part:
             continue
-        # 取最后一段（不含价格括号部分）
-        last_open = part.rfind('（')
-        if last_open >= 0:
-            name_part = part[:last_open].strip()
-            if name_part:
-                items.append(name_part)
-        elif part and part != ',':
-            items.append(part)
+        # 跳过纯价格片段（以（数字开头）
+        if part.startswith('（') and re.match(r'^（[\d.]+', part):
+            continue
+        # 找最后一个（，如果（后面是数字则去掉（及其后面内容，否则保留
+        price_idx = part.rfind('（')
+        if price_idx >= 0:
+            after = part[price_idx+1:].strip()
+            # 只有（后面跟着数字/小数点时才视为价格
+            if re.match(r'^[\d.]+', after):
+                name = part[:price_idx].strip()
+            else:
+                name = part  # 保留（如（小份）
+        else:
+            name = part
+        # 清理前后逗号和空白
+        name = name.strip(',').strip()
+        if name and name != ',':
+            items.append(name)
     if not items:
         items = [products_str]
     for item in items:
@@ -756,11 +766,24 @@ def dashboard():
                             if t == 'SALE':
                                 entries.append({'label': f'销{q:.0f}', 'color': 'red'})
                             elif t == 'PURCHASE':
-                                entries.append({'label': f'进{q:.0f}', 'color': 'green'})
+                                entries.append({'label': f'入{q:.0f}', 'color': 'green'})
                             elif t == 'STOCKTAKE':
                                 entries.append({'label': f'盘{q:.0f}', 'color': 'blue'})
                             else:
                                 entries.append({'label': f'{t}{q:.0f}', 'color': 'gray'})
+                        # 当天下单采购量
+                        cur.execute(
+                            'SELECT COALESCE(SUM(poi.purchase_count * '
+                            "CASE WHEN m.name='鲜鸡' THEN 1 WHEN m.name='土猪内排' THEN 13 "
+                            "WHEN m.name='福浔道港式乳鸽' THEN 30 ELSE 1 END), 0) as qty "
+                            'FROM purchase_orders po '
+                            'JOIN purchase_order_items poi ON po.order_no = poi.order_no '
+                            'JOIN materials m ON poi.material_id = m.id '
+                            "WHERE DATE(po.purchase_time)=%s AND poi.material_id=%s",
+                            (d.isoformat(), mat['id']))
+                        po_qty = float(cur.fetchone()['qty'] or 0)
+                        if po_qty > 0:
+                            entries.append({'label': f'采{po_qty:.0f}', 'color': 'blue'})
                         days_data.append(entries)
                     dynamic_rows.append({'name': mat['name'], 'days': days_data})
 
