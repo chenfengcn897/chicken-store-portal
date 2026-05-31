@@ -105,6 +105,7 @@ def _normalize_product_name(raw_name):
         (['鲜橙多'], '鲜橙多'),
         (['金桔柠檬'], '统一金桔柠檬'),
         (['闽超'], '闽超套餐'),
+        (['招牌', '烧鸡'], '招牌脆皮烧鸡-整只'),
         (['双拼'], '招牌脆皮烧鸡-整只'),
         (['百事可乐'], '百事可乐（瓶装）'),
         (['可乐'], '百事可乐（瓶装）'),
@@ -456,7 +457,21 @@ def calc_material_cost(products_str):
     # 提取商品名（价格×数量）匹配，避免 JSON 里的逗号干扰
     import re as _re
     # 匹配模式: 任意字符后跟（价格×数量），用正则定位每个商品
-    items = _re.findall(r'[^（]+（[^）]*?）', products_str)
+    # 更好的解析方式：按逗号分割（处理JSON内部的逗号），再取每个段最末尾的（价格*数量）部分
+    raw_items = products_str.split('）')
+    items = []
+    for part in raw_items:
+        part = part.strip()
+        if not part or part == '':
+            continue
+        # 取最后一段（不含价格括号部分）
+        last_open = part.rfind('（')
+        if last_open >= 0:
+            name_part = part[:last_open].strip()
+            if name_part:
+                items.append(name_part)
+        elif part and part != ',':
+            items.append(part)
     if not items:
         items = [products_str]
     for item in items:
