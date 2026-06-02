@@ -804,8 +804,8 @@ def dashboard():
                         'FROM purchase_orders po '
                         'JOIN purchase_order_items poi ON po.order_no = poi.order_no '
                         'JOIN materials m ON poi.material_id = m.id '
-                        "WHERE DATE(po.purchase_time)=%s AND poi.material_id=%s",
-                        (d.isoformat(), mat_ids[0]))
+                        "WHERE DATE(po.purchase_time)=%s AND poi.material_id IN (" + placeholders + ")",
+                        [d.isoformat()] + mat_ids)
                     po_qty = float(cur.fetchone()['qty'] or 0)
                     if po_qty > 0:
                         entries.append({'label': f'采{po_qty:.0f}', 'color': 'blue'})
