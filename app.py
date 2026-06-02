@@ -781,15 +781,24 @@ def dashboard():
                 for i in range(6, -1, -1):
                     d = today - timedelta(days=i)
                     cur.execute(
-                        "SELECT type, SUM(ABS(quantity)) as qty FROM inventory_ledger "
+                        "SELECT type, SUM(quantity) as qty FROM inventory_ledger "
                         "WHERE material_id IN (%s) AND date=%%s GROUP BY type" % placeholders,
                         mat_ids + [d])
                     entries = []
                     for le in cur.fetchall():
                             t = le['type']
                             q = float(le['qty'] or 0)
-                            if t == 'SALE':
-                                entries.append({'label': f'销{q:.0f}', 'color': 'red'})
+                            if t == 'BYPRODUCT':
+                                # Byproduct = production (positive qty = inventory increase)
+                                entries.append({'label': f'产{abs(q):.0f}', 'color': 'blue'})
+                            elif t == 'SALE':
+                                # Negative SALE = consumption (sold to customers)
+                                # Positive SALE = legacy data (mixed production, from before separation)
+                                if q < 0:
+                                    entries.append({'label': f'销{abs(q):.0f}', 'color': 'red'})
+                                elif q > 0:
+                                    # Legacy: positive SALE was old chicken feet production
+                                    entries.append({'label': f'产{abs(q):.0f}', 'color': 'blue'})
                             elif t == 'PURCHASE':
                                 entries.append({'label': f'入{q:.0f}', 'color': 'green'})
                             elif t == 'STOCKTAKE':
